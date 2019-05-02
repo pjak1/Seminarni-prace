@@ -75,6 +75,36 @@ class Had:
         else:
             del self.had[0]
 
+    def Smery(self):
+        delkaHada = len(self.had)
+        delkaHada -= 1
+        global n
+        # Odkud
+        if self.had[n - 1][0] < self.had[n][0]:
+            self.odkud = "left"
+        if self.had[n - 1][0] > self.had[n][0]:
+            self.odkud = "right"
+        if self.had[n - 1][1] < self.had[n][1]:
+            self.odkud = "bottom"
+        if self.had[n - 1][1] > self.had[n][1]:
+            self.odkud = "top"
+        if n == 0 or (n - 1) < 0:
+            self.odkud = "end"
+        # Kam
+        if n == delkaHada or (n + 1) > delkaHada:
+            self.kam = "tongue"
+            n = 0
+            return
+        if self.had[n][0] < self.had[n + 1][0]:
+            self.kam = "right"
+        if self.had[n][0] > self.had[n + 1][0]:
+            self.kam = "left"
+        if self.had[n][1] < self.had[n + 1][1]:
+            self.kam = "top"
+        if self.had[n][1] > self.had[n + 1][1]:
+            self.kam = "bottom"
+        n += 1
+
 
 window = pyglet.window.Window(1500, 950)
 h = Had()
@@ -89,10 +119,12 @@ def on_draw():
     pyglet.gl.glEnable(pyglet.gl.GL_BLEND)
     pyglet.gl.glBlendFunc(pyglet.gl.GL_SRC_ALPHA, pyglet.gl.GL_ONE_MINUS_SRC_ALPHA)
     for x, y in h.had:
-        odkud = "end"
-        kam = "end"
-        if kam == "end" and not stav.had_zije:
+        h.Smery()
+        odkud = h.odkud
+        kam = h.kam
+        if not stav.had_zije:
             kam = "dead"
+            odkud = "end"
         casti_hada[odkud + "-" + kam].blit(x * VELIKOST_CTVERCE, y * VELIKOST_CTVERCE, width=64, height=64)
     for x, y in h.krmeni:
         casti_hada["jidlo"].blit(x * VELIKOST_CTVERCE, y * VELIKOST_CTVERCE, width=64, height=64)
