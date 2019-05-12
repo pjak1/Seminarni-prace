@@ -8,8 +8,6 @@ casti_hada = {}
 for cesta in cesta_casti.glob("*.png"):
     casti_hada[cesta.stem] = pyglet.image.load(cesta)
 
-n = 0  # číslování částí pro Smery
-
 
 class Stav:
     def __init__(self):
@@ -25,21 +23,10 @@ class Had:
     def __init__(self):
         self.had = [(6, 7), (7, 7)]
         self.smer_pohybu = 1, 0
-        self.krmeni = []
         self.odkud = ""
         self.kam = ""
         self.smery_ve_fronte = []
-        self.Pridat_jidlo()
-        self.Pridat_jidlo()
-
-    def Pridat_jidlo(self):
-        for pridej_jidlo in range(50):
-            x = random.randrange(stav.sirka)
-            y = random.randrange(stav.vyska)
-            pozice = x, y
-            if (pozice not in self.krmeni) and (pozice not in self.had):
-                self.krmeni.append(pozice)
-                return
+        self.cast_hada = 0
 
     def Pohyb(self):
         if self.smery_ve_fronte:
@@ -52,7 +39,7 @@ class Had:
                 self.smer_pohybu = novy_smer
         if not stav.had_zije:
             return
-            # Pohyb
+        # Pohyb - nová pozice = stará pozice + nový směr zadaný hráčem
         stara_x, stara_y = self.had[-1]
         smer_x, smer_y = self.smer_pohybu
         nova_x = stara_x + smer_x
@@ -69,45 +56,84 @@ class Had:
 
         # Jezení jídla
         self.had.append(nova_hlava)
-        if nova_hlava in self.krmeni:
-            self.krmeni.remove(nova_hlava)
-            self.Pridat_jidlo()
+        if nova_hlava in jabko.pozice_jidla:
+            jabko.pozice_jidla.remove(nova_hlava)
+            jabko.Pridat_jidlo()
+        elif nova_hlava in pomeranc.pozice_jidla:
+            pomeranc.pozice_jidla.remove(nova_hlava)
+            pomeranc.Pridat_jidlo()
         else:
             del self.had[0]
 
     def Smery(self):
         delkaHada = len(self.had)
         delkaHada -= 1
-        global n
-        # Odkud
-        if self.had[n - 1][0] < self.had[n][0]:
+        # Určuje směr předchozí části
+        if self.had[self.cast_hada - 1][0] < self.had[self.cast_hada][0]:
             self.odkud = "left"
-        if self.had[n - 1][0] > self.had[n][0]:
+        if self.had[self.cast_hada - 1][0] > self.had[self.cast_hada][0]:
             self.odkud = "right"
-        if self.had[n - 1][1] < self.had[n][1]:
+        if self.had[self.cast_hada - 1][1] < self.had[self.cast_hada][1]:
             self.odkud = "bottom"
-        if self.had[n - 1][1] > self.had[n][1]:
+        if self.had[self.cast_hada - 1][1] > self.had[self.cast_hada][1]:
             self.odkud = "top"
-        if n == 0 or (n - 1) < 0:
+        if self.cast_hada == 0 or (self.cast_hada - 1) < 0:
             self.odkud = "end"
-        # Kam
-        if n == delkaHada or (n + 1) > delkaHada:
+        # Určuje kam má směřovat část hada
+        if self.cast_hada == delkaHada or (self.cast_hada + 1) > delkaHada:
             self.kam = "tongue"
-            n = 0
+            self.cast_hada = 0
             return
-        if self.had[n][0] < self.had[n + 1][0]:
+        if self.had[self.cast_hada][0] < self.had[self.cast_hada + 1][0]:
             self.kam = "right"
-        if self.had[n][0] > self.had[n + 1][0]:
+        if self.had[self.cast_hada][0] > self.had[self.cast_hada + 1][0]:
             self.kam = "left"
-        if self.had[n][1] < self.had[n + 1][1]:
+        if self.had[self.cast_hada][1] < self.had[self.cast_hada + 1][1]:
             self.kam = "top"
-        if self.had[n][1] > self.had[n + 1][1]:
+        if self.had[self.cast_hada][1] > self.had[self.cast_hada + 1][1]:
             self.kam = "bottom"
-        n += 1
+        self.cast_hada += 1
 
+
+had = Had()
+
+
+class Jidlo:
+    def __init__(self):
+        self.pozice_jidla = []
+
+    def Pridat_jidlo(self):
+        for pridej_jidlo in range(50):
+            x = random.randrange(stav.sirka)
+            y = random.randrange(stav.vyska)
+            pozice = x, y
+            if (pozice not in self.pozice_jidla) and (pozice not in had.had):
+                self.pozice_jidla.append(pozice)
+                return
+
+
+class Jabko(Jidlo):
+    def __init__(self):
+        super().__init__()
+        self.pozice_jidla = []
+        self.obrazek_jabka = "apple"
+        self.Pridat_jidlo()
+
+
+jabko = Jabko()
+
+
+class Pomeranc(Jidlo):
+    def __init__(self):
+        super().__init__()
+        self.pozice_jidla = []
+        self.obrazek_pomerance = "orange"
+        self.Pridat_jidlo()
+
+
+pomeranc = Pomeranc()
 
 window = pyglet.window.Window(1500, 950)
-h = Had()
 stav.sirka = window.width // VELIKOST_CTVERCE
 stav.vyska = window.height // VELIKOST_CTVERCE
 
@@ -118,20 +144,21 @@ def on_draw():
     window.clear()
     pyglet.gl.glEnable(pyglet.gl.GL_BLEND)
     pyglet.gl.glBlendFunc(pyglet.gl.GL_SRC_ALPHA, pyglet.gl.GL_ONE_MINUS_SRC_ALPHA)
-    for x, y in h.had:
-        h.Smery()
-        odkud = h.odkud
-        kam = h.kam
+    for x, y in had.had:
+        had.Smery()
+        odkud = had.odkud
+        kam = had.kam
         if not stav.had_zije:
             kam = "dead"
             odkud = "end"
         casti_hada[odkud + "-" + kam].blit(x * VELIKOST_CTVERCE, y * VELIKOST_CTVERCE, width=64, height=64)
-    for x, y in h.krmeni:
-        casti_hada["jidlo"].blit(x * VELIKOST_CTVERCE, y * VELIKOST_CTVERCE, width=64, height=64)
+    for x, y in jabko.pozice_jidla:
+        casti_hada["apple"].blit(x * VELIKOST_CTVERCE, y * VELIKOST_CTVERCE, width=64, height=64)
+    for x, y in pomeranc.pozice_jidla:
+        casti_hada["orange"].blit(x * VELIKOST_CTVERCE, y * VELIKOST_CTVERCE, width=64, height=64)
+
 
 # Ovládání pohybu
-
-
 @window.event
 def on_key_press(kod_znaku, pomocna_klavesa):  # povinné 2 parametry
     if kod_znaku == pyglet.window.key.LEFT:
@@ -142,11 +169,11 @@ def on_key_press(kod_znaku, pomocna_klavesa):  # povinné 2 parametry
         novy_smer = 0, 1
     if kod_znaku == pyglet.window.key.DOWN:
         novy_smer = 0, -1
-    h.smery_ve_fronte.append(novy_smer)
+    had.smery_ve_fronte.append(novy_smer)
 
 
 def Pohyb(prodleva):
-    h.Pohyb()
+    had.Pohyb()
 
 
 pyglet.clock.schedule_interval(Pohyb, 1 / 6)
