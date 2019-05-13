@@ -116,7 +116,6 @@ class Jabko(Jidlo):
     def __init__(self):
         super().__init__()
         self.pozice_jidla = []
-        self.obrazek_jabka = "apple"
         self.Pridat_jidlo()
 
 
@@ -127,7 +126,6 @@ class Pomeranc(Jidlo):
     def __init__(self):
         super().__init__()
         self.pozice_jidla = []
-        self.obrazek_pomerance = "orange"
         self.Pridat_jidlo()
 
 
