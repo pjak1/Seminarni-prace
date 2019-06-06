@@ -1,6 +1,7 @@
 import pyglet
 import random
 from pathlib import Path
+from win32api import GetSystemMetrics
 VELIKOST_CTVERCE = 64
 # Načtení obrázků
 cesta_casti = Path("casti_hada")
@@ -17,6 +18,9 @@ class Stav:
 
 
 stav = Stav()
+window = pyglet.window.Window(GetSystemMetrics(0), GetSystemMetrics(1), fullscreen=True)
+stav.sirka = window.width // VELIKOST_CTVERCE
+stav.vyska = window.height // VELIKOST_CTVERCE
 
 
 class Had:
@@ -45,7 +49,7 @@ class Had:
         nova_x = stara_x + smer_x
         nova_y = stara_y + smer_y
         # Kontrola vylezení z hrací plochy
-        if nova_x < 0 or nova_x > stav.sirka:
+        if nova_x < 0 or nova_x >= stav.sirka:
             stav.had_zije = False
         if nova_y > stav.vyska or nova_y < 0:
             stav.had_zije = False
@@ -107,9 +111,13 @@ class Jidlo:
             x = random.randrange(stav.sirka)
             y = random.randrange(stav.vyska)
             pozice = x, y
-            if (pozice not in self.pozice_jidla) and (pozice not in had.had):
+            if (pozice not in self.pozice_jidla) and (pozice not in had.had) and (pozice not in jidlo.pozice_jidla):
                 self.pozice_jidla.append(pozice)
+                jidlo.pozice_jidla.append(pozice)
                 return
+
+
+jidlo = Jidlo()
 
 
 class Jabko(Jidlo):
@@ -130,10 +138,6 @@ class Pomeranc(Jidlo):
 
 
 pomeranc = Pomeranc()
-
-window = pyglet.window.Window(1500, 950)
-stav.sirka = window.width // VELIKOST_CTVERCE
-stav.vyska = window.height // VELIKOST_CTVERCE
 
 
 # Vykreslování
@@ -161,13 +165,16 @@ def on_draw():
 def on_key_press(kod_znaku, pomocna_klavesa):  # povinné 2 parametry
     if kod_znaku == pyglet.window.key.LEFT:
         novy_smer = -1, 0
+        had.smery_ve_fronte.append(novy_smer)
     if kod_znaku == pyglet.window.key.RIGHT:
         novy_smer = 1, 0
+        had.smery_ve_fronte.append(novy_smer)
     if kod_znaku == pyglet.window.key.UP:
         novy_smer = 0, 1
+        had.smery_ve_fronte.append(novy_smer)
     if kod_znaku == pyglet.window.key.DOWN:
         novy_smer = 0, -1
-    had.smery_ve_fronte.append(novy_smer)
+        had.smery_ve_fronte.append(novy_smer)
 
 
 def Pohyb(prodleva):
